@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
+import { useDispatch } from "react-redux";
+import { loginFailure, loginStart, loginSuccess } from "../redux/userSlice";
+import { signIn, signInWithGoogle } from "../api";
+import { signInWithPopup } from 'firebase/auth'
+import { auth, provider } from "../firebase";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: calc(100vh - 56px);
+  height: auto;
   color: ${({ theme }) => theme.text};
 `;
 
@@ -64,19 +69,74 @@ const Link = styled.span`
 `;
 
 const SignIn = () => {
+
+  const [formData, setFormData] = useState({userName: '', email: '', password: ''});
+  const [isSignUp, setisSignUp] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({...formData, [e.target.name]:e.target.value})
+  }
+
+  const handleLogin = async (e) =>{
+    e.preventDefault();
+      dispatch(loginStart());
+      signIn(formData).then((res) =>{
+        dispatch(loginSuccess(res.data));
+        navigate('/');
+      }).catch((error) => {
+        dispatch(loginFailure());
+        console.log(error);
+      });
+  } 
+    
+  
+  const handleSignup = () =>{
+
+  }
+
+  const signInUsingGoogle = async () =>{
+    dispatch(loginStart());
+    signInWithPopup(auth, provider)
+    .then((result) => 
+      signInWithGoogle({userName: result.user.displayName, email: result.user.email, img: result.user.photoURL})
+    ).then((res) =>{ 
+      dispatch(loginSuccess(res.data));
+      navigate('/');
+    }).catch((error) => {
+      dispatch(loginFailure());
+      console.log(error);
+    })
+  }
+  const switchMode = async () =>{
+    setisSignUp((previousState) => {
+      return !previousState;
+    })
+  }
+
   return (
     <Container>
       <Wrapper>
-        <Title>Sign in</Title>
-        <SubTitle>to continue to LamaTube</SubTitle>
-        <Input placeholder="username" />
-        <Input type="password" placeholder="password" />
-        <Button>Sign in</Button>
+        <Title>{isSignUp ? 'Sign Up' : "Sign In"}</Title>
+        <SubTitle>to continue to YouTube</SubTitle>
+        {
+          isSignUp && <Input name="username" placeholder="username" value={formData.userName} onChange={handleChange}/>
+        }
+        <Input name="email" placeholder="email" value={formData.email} onChange={handleChange}/>
+        <Input name="password" type="password" placeholder="password" value={formData.password} onChange={handleChange}/>
+        {
+          isSignUp 
+          ?
+          <Button onClick={handleSignup}>Sign up</Button>
+          :
+          <Button onClick={handleLogin}>Sign in</Button>
+        }
         <Title>or</Title>
-        <Input placeholder="username" />
-        <Input placeholder="email" />
-        <Input type="password" placeholder="password" />
-        <Button>Sign up</Button>
+        <Button onClick={signInUsingGoogle}>Signin with Google</Button>
+        <Button style={{backgroundColor: 'inherit', padding:0}} onClick={switchMode}>
+          {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+        </Button>
       </Wrapper>
       <More>
         English(USA)

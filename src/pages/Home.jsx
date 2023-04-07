@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import Card from "../components/Card";
+import { fetchVideos } from "../api";
 
 const Container = styled.div`
   display: flex;
@@ -8,29 +9,27 @@ const Container = styled.div`
   flex-wrap: wrap;
 `;
 
-const Home = () => {
+const Home = ({type}) => {
+
+  const [videos, setVideos] = useState([]);
+
+  useEffect(() => {
+    try {
+      const fetch = async () => {
+        const res = await fetchVideos(type);
+        setVideos(res.data);
+      }
+      fetch();
+    } catch (error) {
+      console.log(error);
+    }
+  },[type]);
+
   return (
     <Container>
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
-      <Card />
+      {videos.map((video) => (
+        <Card key={video._id} video={video} />
+      ))}
     </Container>
   );
 };
