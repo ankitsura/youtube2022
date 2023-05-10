@@ -16,34 +16,34 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import SettingsBrightnessOutlinedIcon from "@mui/icons-material/SettingsBrightnessOutlined";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
+
 const Container = styled.div`
   /* width */
   ::-webkit-scrollbar {
     width: 0px;
   }
 
-  flex: 1;
   background-color: ${({ theme }) => theme.bgLighter};
   height: 100vh;
   color: ${({ theme }) => theme.text};
   font-size: 14px;
   position: sticky;
-  top: 0;
+  top: 56px;
   overflow-y:scroll;
 `;
 const Wrapper = styled.div`
-  padding: 18px 26px;
+  padding: 5px 20px;
 `;
 
 const Item = styled.div`
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 10px;
   cursor: pointer;
   padding: 7.5px 0px;
-
+  width: 100%;
   &:hover {
     background-color: ${({ theme }) => theme.soft};
   }
@@ -55,6 +55,7 @@ const Hr = styled.hr`
 `;
 
 const Login = styled.div``;
+
 const Button = styled.button`
   padding: 5px 15px;
   background-color: transparent;
@@ -79,21 +80,24 @@ const Title = styled.h2`
 const Menu = ({ darkMode, setDarkMode }) => {
 
   const {currentUser} = useSelector(state => state.user);
+  const location = useLocation();
 
   return (
     <Container>
       <Wrapper>
+      <Link to="/" style={{textDecoration: "none", color: "inherit"}}>
         <Item>
           <HomeIcon />
           Home
         </Item>
+        </Link>
         <Link to="trends" style={{textDecoration: "none", color: "inherit"}}>
           <Item>
             <ExploreOutlinedIcon />
             Explore
           </Item>
         </Link>
-        <Link to="subscriptions" style={{textDecoration: "none", color: "inherit"}}>
+        <Link to="/subscriptions" style={{textDecoration: "none", color: "inherit"}}>
           <Item>
             <SubscriptionsOutlinedIcon />
             Subscriptions
@@ -109,7 +113,7 @@ const Menu = ({ darkMode, setDarkMode }) => {
           History
         </Item>
         <Hr />
-        {!currentUser &&
+        {!currentUser && location.pathname !== '/signin' &&
           <>
             <Login>
               Sign in to like videos, comment, and subscribe.

@@ -7,9 +7,9 @@ import axios from "axios";
 const Container = styled.div`
   width: ${(props) => props.type !== "sm" && "360px"};
   margin-bottom: ${(props) => (props.type === "sm" ? "10px" : "45px")};
-  cursor: pointer;
   display: ${(props) => props.type === "sm" && "flex"};
   gap: 10px;
+  user-select: none;
 `;
 
 const Image = styled.img`
@@ -55,40 +55,44 @@ const Info = styled.div`
 
 const Card = ({ type, video }) => {
 
+  const videoCreatorId = video?.userId;
+  // const videoId = video?._id;
   const [channel, setChannel] = useState({});
 
   useEffect(() => {
     try {
       const fetchChannel = async () => {
-        const res = await axios.get(`http://localhost:5000/api/users/find/${video.userId}`);
+        const res = await axios.get(`http://localhost:5000/api/users/find/${videoCreatorId}`);
         setChannel(res.data);
       };
       fetchChannel(); 
     } catch (error) {
       console.log(error);
     }
-  },[video.userId]);
+  },[videoCreatorId]);
 
   return (
-    <Link to="/video/test" style={{ textDecoration: "none" }}>
-      <Container type={type}>
+    <Container type={type}>
+      <Link to={`/video/${video._id}`} style={{ textDecoration: "none" }}>
         <Image
           type={type}
           src={video?.imgUrl}
         />
-        <Details type={type}>
-          <ChannelImage
-            type={type}
-            src={channel.img}
+      </Link>
+      <Details type={type}>
+        <ChannelImage
+          type={type}
+          src={channel.img}
           />
-          <Texts>
+        <Texts>
+          <Link to={`/video/${video._id}`} style={{ textDecoration: "none" }}>
             <Title>{video.title}</Title>
-            <ChannelName>{channel.name}</ChannelName>
-            <Info>{video.views} views • {moment(video.createdAt).fromNow()}</Info>
-          </Texts>
-        </Details>
-      </Container>
-    </Link>
+          </Link>
+          <ChannelName>{channel.name}</ChannelName>
+          <Info>{video.views} views • {moment(video.createdAt).fromNow()}</Info>
+        </Texts>
+      </Details>
+  </Container>
   );
 };
 

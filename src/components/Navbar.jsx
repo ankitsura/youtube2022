@@ -8,10 +8,13 @@ import VideoCallOutlinedIcon from "@mui/icons-material/VideoCallOutlined";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../redux/userSlice";
+import Upload from "./Upload";
 
 const Container = styled.div`
   position: sticky;
+  display: block;
   top: 0;
+  z-index: 10;
   background-color: ${({ theme }) => theme.bgLighter};
   height: 56px;
 `;
@@ -47,12 +50,14 @@ const Search = styled.div`
   padding: 5px;
   border: 1px solid #ccc;
   border-radius: 3px;
+  color: ${({ theme }) => theme.text};
 `;
 
 const Input = styled.input`
   border: none;
   background-color: transparent;
   outline: none;
+  flex: 9;
   color: ${({ theme }) => theme.text};
 `;
 
@@ -83,69 +88,77 @@ const Avatar = styled.img`
   border-radius: 50%;
   /* background-color: #999; */
 `;
+// function useQuery(){
+//   return new URLSearchParams(useLocation().search);
+// }
 
 const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentUser, setCurrentUser] = useState(localStorage?.getItem('access_token'));
+  const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage?.getItem('access_token')));
+  const [open, setOpen] = useState(false);
+  const [search, setSerach] = useState('');
+  // const query = useQuery();
+
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/signin');
     setCurrentUser(null);
+    navigate('/');
   }
-
+  
   useEffect(() => {
-    const token = currentUser;
-    console.log(token);
+    setCurrentUser(JSON.parse(localStorage?.getItem('access_token')));
+    const token = currentUser?.token;
      if (token) {
        const decodedToken = jwtDecode(token);
        if(decodedToken.exp * 1000 < new Date().getTime()){
         handleLogout();
         }
       }
-  });
-  
-  
-  useEffect(() => {
-    setCurrentUser(localStorage?.getItem('access_token'));
-  }, [location]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
 
   return (
-    <Container>
-      <Wrapper>
-        <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
-          <Logo>
-            <Img src={YouTube} />
-            YouTube
-          </Logo>
-        </Link>
-        <Search>
-          <Input placeholder="Search" />
-          <SearchOutlinedIcon />
-        </Search>
-        {currentUser ? (
-          <User>
-            <VideoCallOutlinedIcon/>
-            <Avatar src={currentUser && decodedToken.imgUrl} />
-            {currentUser.name}
-            <Button onClick={handleLogout}>
-              <AccountCircleOutlinedIcon />
-              Logout
-            </Button>
-          </User>
-          
-        ) : (
-          <Link to="signin" style={{ textDecoration: "none" }}>
-            <Button>
-              <AccountCircleOutlinedIcon />
-              SIGN IN
-            </Button>
+    <>
+      <Container>
+        <Wrapper>
+          <Link to="/" style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}>
+            <Logo>
+              <Img src={YouTube} />
+              YouTube
+            </Logo>
           </Link>
-        )
-        }
-      </Wrapper>
-    </Container>
+          <Search>
+            <Input placeholder="Search" onChange={e=>setSerach(e.target.value)} />
+            <SearchOutlinedIcon style={{cursor:'pointer', flex:'1'}} onClick={()=>navigate(`/search?searchQuery=${search}`)} />
+          </Search>
+          {currentUser ? (
+            <User>
+              <VideoCallOutlinedIcon style={{cursor:'pointer'}} onClick={ () => setOpen(true) } />
+              <Avatar src={currentUser.others?.img} />
+              {currentUser.others.name}
+              <Button onClick={handleLogout}>
+                <AccountCircleOutlinedIcon />
+                Logout
+              </Button>
+            </User>
+            
+          ) : ( location.pathname !== '/signin' &&
+            <Link to="signin" style={{ textDecoration: "none" }}>
+              <Button>
+                <AccountCircleOutlinedIcon />
+                SIGN IN
+              </Button>
+            </Link>
+          )
+          }
+        </Wrapper>
+      </Container>
+      {
+        open && <Upload setOpen={setOpen} />
+      }
+    </>
   );
 };
 

@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { useDispatch } from "react-redux";
 
 const initialState = {
     currentUser: null,
@@ -14,9 +15,9 @@ export const userSlice = createSlice({
             state.loading= true;
         },
         loginSuccess: (state, action) => {
-            state.loading= false;
             state.currentUser= action.payload.others;
-            localStorage.setItem('access_token', action?.payload?.token);
+            localStorage.setItem('access_token',JSON.stringify(action?.payload));
+            state.loading= false;
         },
         loginFailure: (state) => {
             state.loading= false;
@@ -27,10 +28,18 @@ export const userSlice = createSlice({
             state.loading= false;
             state.error= false;
             localStorage.clear();
-        }
+        },
+        subscriptions: (state, action) => {
+            if(state.currentUser.subscribedUsers.includes(action.payload._id)){
+                state.currentUser.subscribedUsers.splice(
+                    (state.currentUser.subscribedUsers.findIndex((userId) => userId === action.payload._id)),1);
+            }else{
+                state.currentUser.subscribedUsers.push(action.payload._id);
+            }
+        },
     }
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout } = userSlice.actions;
+export const { loginStart, loginSuccess, loginFailure, logout, subscriptions } = userSlice.actions;
 
 export default userSlice.reducer;

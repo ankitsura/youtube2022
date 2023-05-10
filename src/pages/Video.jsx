@@ -1,21 +1,36 @@
-import React from "react";
-import styled from "styled-components";
-import ThumbUpOutlinedIcon from "@mui/icons-material/ThumbUpOutlined";
-import ThumbDownOffAltOutlinedIcon from "@mui/icons-material/ThumbDownOffAltOutlined";
-import ReplyOutlinedIcon from "@mui/icons-material/ReplyOutlined";
-import AddTaskOutlinedIcon from "@mui/icons-material/AddTaskOutlined";
+import React, { useEffect, useState } from "react";
+import styled, { createGlobalStyle } from "styled-components";
+import { AddTaskOutlined, ReplyOutlined, ThumbUpOutlined, ThumbUpAlt, ThumbDownOffAltOutlined, ThumbDownAlt } from "@mui/icons-material";
 import Comments from "../components/Comments";
 import Card from "../components/Card";
+import { useLocation } from "react-router-dom";
+import { dislikeVideo, getSingleVideo, handleSubscribeChannel, likeVideo } from "../api";
+import { useDispatch, useSelector } from "react-redux";
+import { handleDislikeVideo, handleLikeVideo } from "../redux/videoSlice";
+import moment from "moment";
+import Recommendations from "../components/Recommendations";
+
+
 
 const Container = styled.div`
+::-webkit-scrollbar {
+    width: 0px;
+  }
   display: flex;
   gap: 24px;
 `;
 
 const Content = styled.div`
+::-webkit-scrollbar {
+    width: 0px;
+  }
   flex: 5;
+  height: var(100vh-56px);
+  overflow-y: scroll;
 `;
-const VideoWrapper = styled.div``;
+const VideoWrapper = styled.div`
+position: relative;
+`;
 
 const Title = styled.h1`
   font-size: 18px;
@@ -33,6 +48,7 @@ const Details = styled.div`
 
 const Info = styled.span`
   color: ${({ theme }) => theme.textSoft};
+  cursor: context-menu;
 `;
 
 const Buttons = styled.div`
@@ -53,9 +69,6 @@ const Hr = styled.hr`
   border: 0.5px solid ${({ theme }) => theme.soft};
 `;
 
-const Recommendation = styled.div`
-  flex: 2;
-`;
 const Channel = styled.div`
   display: flex;
   justify-content: space-between;
@@ -103,75 +116,99 @@ const Subscribe = styled.button`
   padding: 10px 20px;
   cursor: pointer;
 `;
+const VideoFrame = styled.video`
+  max-height: 75vh;
+  width: 100%;
+  object-fit: cover;
+`;
 
 const Video = () => {
+  
+  const dispatch = useDispatch();
+  const videoId = useLocation().pathname.split('/')[2];
+
+  const { currentUser } = useSelector((state) => state.user);
+  
+  const video = useSelector((state) => state.video.currentVideo?.video);
+  const channel = useSelector((state) => state.video.currentVideo?.channel);
+  const isSubscribed = (currentUser?.subscribedUsers)?.includes(channel?._id);
+
+  const handleLike = () => {
+    likeVideo(videoId).then((res) => dispatch(handleLikeVideo(res.data)));
+  }
+  const handleDislike = () => {
+    dislikeVideo(videoId).then((res) => dispatch(handleDislikeVideo(res.data)));
+  }
+
+  const toogleSubscribe = () => {
+      dispatch(handleSubscribeChannel(channel._id));
+    }
+
+  useEffect(() => {
+    dispatch(getSingleVideo(videoId));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[videoId]);
+
   return (
     <Container>
       <Content>
         <VideoWrapper>
-          <iframe
-            width="100%"
-            height="720"
-            src="https://www.youtube.com/embed/k3Vfj-e1Ma4"
-            title="YouTube video player"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-          ></iframe>
+          <VideoFrame src={video?.videoUrl} poster={video?.imgUrl} type="video/mp4" controls />
         </VideoWrapper>
-        <Title>Test Video</Title>
+        <Title>{video?.title}</Title>
         <Details>
-          <Info>7,948,154 views • Jun 22, 2022</Info>
+          <Info>{(video?.views) ? video.views : 0} views • {moment(video?.createdAt).fromNow()}</Info>
           <Buttons>
+            { (currentUser) && 
+            ((currentUser?._id !== channel?._id) ?
+              <>
+                <Button onClick={handleLike}>
+                  {video?.likes?.includes(currentUser?._id) ? <ThumbUpAlt /> : <ThumbUpOutlined />} {video?.likes?.length}
+                </Button>
+                <Button onClick={handleDislike}>
+                {video?.dislikes?.includes(currentUser?._id) ? <ThumbDownAlt /> : <ThumbDownOffAltOutlined />} {video?.dislikes?.length}
+                </Button>
+              </>
+              :
+              <>
+                <Button style={{cursor: 'default'}}>
+                  <ThumbUpAlt /> {video?.likes?.length}
+                </Button>
+                <Button style={{cursor: 'default'}}>
+                  <ThumbDownAlt /> {video?.dislikes?.length}
+                </Button>
+              </>
+            )}
             <Button>
-              <ThumbUpOutlinedIcon /> 123
+              <ReplyOutlined /> Share
             </Button>
             <Button>
-              <ThumbDownOffAltOutlinedIcon /> Dislike
-            </Button>
-            <Button>
-              <ReplyOutlinedIcon /> Share
-            </Button>
-            <Button>
-              <AddTaskOutlinedIcon /> Save
+              <AddTaskOutlined /> Save
             </Button>
           </Buttons>
         </Details>
         <Hr />
         <Channel>
           <ChannelInfo>
-            <Image src="https://yt3.ggpht.com/yti/APfAmoE-Q0ZLJ4vk3vqmV4Kwp0sbrjxLyB8Q4ZgNsiRH=s88-c-k-c0x00ffffff-no-rj-mo" />
+            <Image src={channel?.img} />
             <ChannelDetail>
-              <ChannelName>Lama Dev</ChannelName>
-              <ChannelCounter>200K subscribers</ChannelCounter>
+              <ChannelName>{channel?.name}</ChannelName>
+              <ChannelCounter>{channel?.subscribers} subscribers</ChannelCounter>
               <Description>
-                Lorem ipsum dolor, sit amet consectetur adipisicing elit.
-                Doloribus laborum delectus unde quaerat dolore culpa sit aliquam
-                at. Vitae facere ipsum totam ratione exercitationem. Suscipit
-                animi accusantium dolores ipsam ut.
+                {video?.desc}
               </Description>
             </ChannelDetail>
           </ChannelInfo>
-          <Subscribe>SUBSCRIBE</Subscribe>
+          {(!currentUser) ?
+            <Subscribe style={{cursor:'unset', backgroundColor: 'grey'}}>SUBSCRIBE</Subscribe>
+            :
+            (currentUser?._id !== channel?._id) && <Subscribe onClick={toogleSubscribe}>{isSubscribed ? `SUBSCRIBED` : `SUBSCRIBE`}</Subscribe>
+          }
         </Channel>
         <Hr />
-        <Comments/>
+        <Comments videoId={videoId} currentUser={currentUser} />
       </Content>
-      <Recommendation>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-      </Recommendation>
+      <Recommendations tags={video?.tags}/>
     </Container>
   );
 };
